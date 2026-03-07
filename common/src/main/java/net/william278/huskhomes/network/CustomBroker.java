@@ -23,7 +23,9 @@ import net.william278.huskhomes.HuskHomes;
 import net.william278.huskhomes.user.OnlineUser;
 import org.jetbrains.annotations.NotNull;
 
-public class CustomBroker extends Broker {
+import java.util.logging.Level;
+
+public class CustomBroker extends PluginMessageBroker {
 
     protected CustomBroker(@NotNull HuskHomes plugin) {
         super(plugin);
@@ -34,11 +36,44 @@ public class CustomBroker extends Broker {
         // No setup
     }
 
-    public final void onReceive(@NotNull OnlineUser user, @NotNull String subChannelId, @NotNull String message) {
-        if (!subChannelId.equals(getSubChannelId())) {
-            return;
+    public final void onReceive(@NotNull OnlineUser user, @NotNull String subChannelId, @NotNull String encoded) {
+        try {
+            plugin.log(Level.INFO, "Received message");
+            if (!subChannelId.equals(getSubChannelId())) {
+                return;
+            }
+
+            plugin.log(Level.INFO, "parsing");
+            final Message message = plugin.getMessageFromJson(encoded);
+
+            plugin.log(Level.INFO, "Target match? %s".formatted(message.getTargetType()));
+            if (message.getTargetType() == Message.TargetType.PLAYER) {
+                plugin.log(Level.INFO, "Handling player");
+                super.plugin.getOnlineUsers().stream()
+                        .filter(online -> message.getTarget().equals(Message.TARGET_ALL)
+                                || online.getName().equals(message.getTarget()))
+                        .forEach(receiver -> super.handle(receiver, message));
+                return;
+            }
+
+            plugin.log(Level.INFO, "Server match? %s %s".formatted(message.getTarget(), super.plugin.getServerName()));
+            if (message.getTarget().equals(super.plugin.getServerName())
+                    || message.getTarget().equals(Message.TARGET_ALL)) {
+                plugin.log(Level.INFO, "Handling request rtp location");
+                if (message.getType() == Message.MessageType.REQUEST_RTP_LOCATION) {
+                    super.handleRtpRequestLocation(message);
+                    return;
+                }
+
+                plugin.log(Level.INFO, "Handling other");
+                super.plugin.getOnlineUsers().stream()
+                        .findAny()
+                        .ifPresent(receiver -> super.handle(receiver, message));
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+            plugin.log(Level.SEVERE, "An error occurred handling the message", t);
         }
-        super.handle(user, plugin.getMessageFromJson(message));
     }
 
     @Override
@@ -46,12 +81,8 @@ public class CustomBroker extends Broker {
         plugin.fireEvent(plugin.getBrokerMessageSendEvent(sender, getSubChannelId(), plugin.getGson().toJson(message)), null);
     }
 
+    @Override
     public void changeServer(@NotNull OnlineUser user, @NotNull String server) {
         user.dismount().thenRun(() -> plugin.fireEvent(plugin.getBrokerChangeServerEvent(user, server), null));
     }
-
-    @Override
-    public void close() {
-    }
-
 }

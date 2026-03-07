@@ -251,7 +251,7 @@ public class RtpCommand extends Command implements UserListTabCompletable {
                 .ifPresent(teleporter::sendMessage);
 
         if (plugin.getSettings().getRtp().isCrossServer() && plugin.getSettings().getCrossServer().isEnabled()
-            && plugin.getSettings().getCrossServer().getBrokerType() == Broker.Type.REDIS) {
+            && List.of(Broker.Type.REDIS, Broker.Type.CUSTOM).contains(plugin.getSettings().getCrossServer().getBrokerType())) {
             if (targetServer == null || targetServer.equals(plugin.getServerName())) {
                 performLocalRTP(teleporter, executor, world, args);
                 return;
