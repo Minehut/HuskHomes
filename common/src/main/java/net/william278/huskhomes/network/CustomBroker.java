@@ -36,10 +36,10 @@ public class CustomBroker extends PluginMessageBroker {
         // No setup
     }
 
-    public final void onReceive(@NotNull OnlineUser user, @NotNull String subChannelId, @NotNull String encoded) {
+    public final void onReceive(OnlineUser user, String subChannelId, @NotNull String encoded) {
         try {
             plugin.log(Level.INFO, "Received message");
-            if (!subChannelId.equals(getSubChannelId())) {
+            if (subChannelId != null && !subChannelId.equals(getSubChannelId())) {
                 return;
             }
 
