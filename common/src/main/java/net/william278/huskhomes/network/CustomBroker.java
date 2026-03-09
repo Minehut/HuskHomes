@@ -37,42 +37,30 @@ public class CustomBroker extends PluginMessageBroker {
     }
 
     public final void onReceive(OnlineUser user, String subChannelId, @NotNull String encoded) {
-        try {
-            plugin.log(Level.INFO, "Received message");
-            if (subChannelId != null && !subChannelId.equals(getSubChannelId())) {
+        if (subChannelId != null && !subChannelId.equals(getSubChannelId())) {
+            return;
+        }
+
+        final Message message = plugin.getMessageFromJson(encoded);
+
+        if (message.getTargetType() == Message.TargetType.PLAYER) {
+            super.plugin.getOnlineUsers().stream()
+                    .filter(online -> message.getTarget().equals(Message.TARGET_ALL)
+                            || online.getName().equals(message.getTarget()))
+                    .forEach(receiver -> super.handle(receiver, message));
+            return;
+        }
+
+        if (message.getTarget().equals(super.plugin.getServerName())
+                || message.getTarget().equals(Message.TARGET_ALL)) {
+            if (message.getType() == Message.MessageType.REQUEST_RTP_LOCATION) {
+                super.handleRtpRequestLocation(message);
                 return;
             }
 
-            plugin.log(Level.INFO, "parsing");
-            final Message message = plugin.getMessageFromJson(encoded);
-
-            plugin.log(Level.INFO, "Target match? %s".formatted(message.getTargetType()));
-            if (message.getTargetType() == Message.TargetType.PLAYER) {
-                plugin.log(Level.INFO, "Handling player");
-                super.plugin.getOnlineUsers().stream()
-                        .filter(online -> message.getTarget().equals(Message.TARGET_ALL)
-                                || online.getName().equals(message.getTarget()))
-                        .forEach(receiver -> super.handle(receiver, message));
-                return;
-            }
-
-            plugin.log(Level.INFO, "Server match? %s %s".formatted(message.getTarget(), super.plugin.getServerName()));
-            if (message.getTarget().equals(super.plugin.getServerName())
-                    || message.getTarget().equals(Message.TARGET_ALL)) {
-                plugin.log(Level.INFO, "Handling request rtp location");
-                if (message.getType() == Message.MessageType.REQUEST_RTP_LOCATION) {
-                    super.handleRtpRequestLocation(message);
-                    return;
-                }
-
-                plugin.log(Level.INFO, "Handling other");
-                super.plugin.getOnlineUsers().stream()
-                        .findAny()
-                        .ifPresent(receiver -> super.handle(receiver, message));
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-            plugin.log(Level.SEVERE, "An error occurred handling the message", t);
+            super.plugin.getOnlineUsers().stream()
+                    .findAny()
+                    .ifPresent(receiver -> super.handle(receiver, message));
         }
     }
 

@@ -34,7 +34,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
 
 public interface MessageHandler {
 
@@ -125,21 +124,16 @@ public interface MessageHandler {
     }
 
     default void handleRtpRequestLocation(@NotNull Message message) {
-        getPlugin().log(Level.INFO, "Getting world");
         final Optional<World> requested = message.getPayload().getString().flatMap(
                 name -> getPlugin().getWorlds().stream().filter(w -> w.getName().equalsIgnoreCase(name)).findFirst());
-        getPlugin().log(Level.INFO, "World is %s".formatted(requested.map(World::getName).orElse(null)));
         requested.map(world -> getPlugin().getRandomTeleportEngine().getRandomPosition(world, new String[0]))
                 .orElse(CompletableFuture.completedFuture(Optional.empty()))
                 .thenAccept(
-                        (teleport) -> {
-                            getPlugin().log(Level.INFO, "sending RTP location back");
-                            Message.builder()
-                                    .type(Message.MessageType.RTP_LOCATION)
-                                    .target(message.getSender(), Message.TargetType.PLAYER)
-                                    .payload(Payload.position(teleport.orElse(null)))
-                                    .build().send(getBroker(), null);
-                        }
+                        (teleport) -> Message.builder()
+                                .type(Message.MessageType.RTP_LOCATION)
+                                .target(message.getSender(), Message.TargetType.PLAYER)
+                                .payload(Payload.position(teleport.orElse(null)))
+                                .build().send(getBroker(), null)
                 );
 
     }
