@@ -118,7 +118,7 @@ public abstract class EventListener {
             // Update global lists
             if (plugin.getSettings().getCrossServer().isEnabled()) {
                 final List<User> users = plugin.getOnlineUsers().stream().map(u -> (User) u).toList();
-                if (plugin.getSettings().getCrossServer().getBrokerType() == Broker.Type.REDIS) {
+                if (List.of(Broker.Type.REDIS, Broker.Type.CUSTOM).contains(plugin.getSettings().getCrossServer().getBrokerType())) {
                     this.updateUserList(online, users);
                     return;
                 }

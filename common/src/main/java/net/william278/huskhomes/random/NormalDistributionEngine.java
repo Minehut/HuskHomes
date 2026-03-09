@@ -27,6 +27,7 @@ import net.william278.huskhomes.position.Position;
 import net.william278.huskhomes.position.World;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -49,7 +50,7 @@ public final class NormalDistributionEngine extends RandomTeleportEngine {
 
         if (plugin.getSettings().getRtp().isCrossServer()
                 && (plugin.getSettings().getCrossServer().isEnabled()
-                && plugin.getSettings().getCrossServer().getBrokerType() != Broker.Type.REDIS)) {
+                && !List.of(Broker.Type.REDIS, Broker.Type.CUSTOM).contains(plugin.getSettings().getCrossServer().getBrokerType()))) {
             plugin.log(Level.WARNING, "Cross-server /rtp support has been disabled as "
                     + "a REDIS message broker is required for this feature.");
         }
