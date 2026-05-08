@@ -828,15 +828,19 @@ public class BaseHuskHomesAPI {
                 List.of(Broker.Type.REDIS, Broker.Type.CUSTOM).contains(plugin.getSettings().getCrossServer().getBrokerType()))) {
             List<String> allowedServers = new ArrayList<>(plugin.getSettings().getRtp().getRandomTargetServers().keySet());
             String randomServer = allowedServers.get(random.nextInt(allowedServers.size()));
+            List<String> allowedWorlds = Objects.requireNonNullElse(plugin.getSettings().getRtp().getRandomTargetServers().get(randomServer), List.of());
             if (randomServer.equals(plugin.getServerName())) {
                 randomlyTeleportPlayerLocally(user, timedTeleport, rtpArgs);
                 return;
             }
 
+            String playerWorld = user.getPosition().getWorld().getName();
+            String targetWorld = allowedWorlds.isEmpty() || allowedWorlds.contains(playerWorld) ? playerWorld : allowedWorlds.get(0);
+
             plugin.getBroker().ifPresent(b -> Message.builder()
                     .target(randomServer, Message.TargetType.SERVER)
                     .type(Message.MessageType.REQUEST_RTP_LOCATION)
-                    .payload(Payload.string(user.getPosition().getWorld().getName()))
+                    .payload(Payload.string(targetWorld))
                     .build().send(b, user));
             return;
         }
