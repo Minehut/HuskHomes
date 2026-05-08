@@ -69,14 +69,14 @@ public class RtpCommand extends Command implements UserListTabCompletable {
         final OnlineUser teleporter = optionalTeleporter.get();
 
         // Determine the target world and server based on the command arguments
-        String worldName = teleporter.getPosition().getWorld().getName();
+        String worldName = plugin.getWorlds().get(0).getName();
         String targetServer = null;
 
         if (args.length == 2) {
             // If there's only one argument after the player name, it could be either a world or a server
             if (plugin.getSettings().getRtp().getRandomTargetServers().containsKey(args[1])) {
                 targetServer = args[1];
-                worldName = teleporter.getPosition().getWorld().getName();
+                worldName = plugin.getWorlds().get(0).getName();
             } else {
                 worldName = args[1];
             }
